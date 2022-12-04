@@ -1,5 +1,7 @@
 # Dynamic Geometry Tool POC using SolidJS
 
+### [Try the app](https://www.vzome.com/webapps/solid-dynamic-geometry/)
+
 SolidJS is built around fine-grained reactivity, which makes it very natural for building
 anything with spreadsheet-like dynamic update.
 In particular, it can be used quite naturally to build a geometry tool like
@@ -7,6 +9,7 @@ In particular, it can be used quite naturally to build a geometry tool like
 or [Geometer's Sketchpad](https://en.wikipedia.org/wiki/The_Geometer%27s_Sketchpad) (the original).
 
 The code here is just the barest proof-of-concept, thrown together in one day.
+No dragging, sorry!
 
 There were a couple of challenges.
 First, I want to make sure the code could be used as an editor, which means that
