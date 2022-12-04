@@ -1,19 +1,15 @@
 import styles from './App.module.css';
 
-import { createSignal, createEffect, Switch } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createSignal, createMemo, Switch } from "solid-js";
 
 const [ height, setHeight ] = createSignal( 500 );
-
-const GET = 0;
-const SET = 1;
 
 // This simulates a saved JSON file, as might be created during an earlier editing session.
 const data = {
   A: { type: 'point', at: [50,50], offset: 20, color: 'red' },
   B: { type: 'point', at: [200,40], offset: 30, color: 'blue' },
   C: { type: 'linesegment', start: 'A', end: 'B', color: 'purple' },
-  D: { type: 'perpendicular', point: 'B', line: 'C' },
+  D: { type: 'perpendicular', point: 'B', line: 'C', color: 'orange' },
 }
 
 const Point = props =>
@@ -22,7 +18,7 @@ const Point = props =>
   const y = () => props.at[1];
   const onClick = () => {
     // This is a quick-and-dirty alternative to dragging, which is a lot harder
-    props.setter( { at: [ x() + props.offset, y() + props.offset ] } );
+    props.setter( { at: [ x() + props.offset, y() + props.offset ], offset: props.offset, color: props.color, type: 'point' } );
   }
   return <circle cx={x()} cy={y()} r="9" fill={props.color} onClick={onClick} />;
 }
@@ -41,28 +37,41 @@ const App = () =>
 {
   // We could render the data directly, but then we would not have a dynamic geometry system,
   //  so we must convert it into a DAG of reactive objects.
-  const stores = {}
+  const getters = {}
+  const setters = {}
   for ( const name in data ) {
     const spec = data[ name ];
+    let getter, setter;
     switch ( spec.type )
     {
-      case 'point':
-        stores[ name ] = createStore( spec );
+      case 'point': {
+        [ getter, setter ] = createSignal( spec );
         break;
+      }
     
       case 'linesegment': {
         const { start, end, type, color } = spec; // start & end here are just names
-        const [ store, setStore ] = createStore( {} );
-        createEffect( () => {
-          setStore( { type, color, start: stores[ start ][ GET ] .at, end: stores[ end ][ GET ] .at } )
-        });
-        stores[ name ] = [ store ]; // don't need the setter; the effect will handle all updates
+        getter = createMemo( () => ({ type, color, start: getters[ start ]() .at, end: getters[ end ]() .at }) );
+        break;
+      }
+    
+      case 'perpendicular': {
+        const { point, line, color } = spec; // point & line here are just names
+        getter = createMemo( () => {
+          const { start, end } = getters[ line ]();
+          const offset = [ -(end[1]-start[1]), end[0]-start[0] ];
+          const newStart = getters[ point ]() .at;
+          const newEnd = [ newStart[0]+offset[0], newStart[1]+offset[1] ];
+          return { type: 'linesegment', color, start: newStart, end: newEnd };
+        } );
         break;
       }
     
       default:
         break;
     }
+    getters[ name ] = getter;
+    setters[ name ] = setter;
   }
 
   return (
@@ -76,13 +85,13 @@ const App = () =>
           <rect width="100%" height="100%" fill="lightgrey" />
 
           {/* Order is reversed so the points will be on top, for better click/drag */}
-          <For each={Object.entries( stores ) .reverse()}>{ ( [ name, store ] ) =>
+          <For each={Object.entries( getters ) .reverse()}>{ ( [ name, get ] ) =>
             <Switch>
-              <Match when={store[ GET ].type === 'point'}>
-                <Point at={store[ GET ] .at} offset={store[ GET ] .offset} color={store[ GET ] .color} setter={store[ SET ]} />
+              <Match when={get().type === 'point'}>
+                <Point at={get().at} offset={get().offset} color={get().color} setter={setters[ name ]} />
               </Match>
-              <Match when={store[ GET ].type === 'linesegment'}>
-                <Line start={store[ GET ] .start} end={store[ GET ] .end} color={store[ GET ] .color} />
+              <Match when={get().type === 'linesegment'}>
+                <Line start={get().start} end={get().end} color={get().color} />
               </Match>
             </Switch>
           }
