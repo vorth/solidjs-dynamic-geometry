@@ -1,3 +1,24 @@
+# Dynamic Geometry Tool POC using SolidJS
+
+SolidJS is built around fine-grained reactivity, which makes it very natural for building
+anything with spreadsheet-like dynamic update.
+In particular, it can be used quite naturally to build a geometry tool like
+[Geogebra](https://www.geogebra.org/geometry), [Desmos](https://www.desmos.org/geometry),
+or [Geometer's Sketchpad](https://en.wikipedia.org/wiki/The_Geometer%27s_Sketchpad) (the original).
+
+The code here is just the barest proof-of-concept, thrown together in one day.
+
+There were a couple of challenges.
+First, I want to make sure the code could be used as an editor, which means that
+the SolidJS signals and memos have to be created from data, not coded statically,
+unlike many Solid examples.
+Similarly, the dependency graph between signals and memos and rendered objects has to be
+dynamically constructed, using a dictionary.
+Solid is pretty unopinionated, so mostly these problems were in my head, and not that hard to overcome.
+Nonetheless, I hope this helps anyone else trying to build a similarly dynamic system.
+
+The rest of this README is the boilerplate from the SolidJS starter repo.
+
 ## Usage
 
 Those templates dependencies are maintained via [pnpm](https://pnpm.io) via `pnpm up -Lri`.
